@@ -1,6 +1,7 @@
 import { connection, server as WebSocketServer } from 'websocket'
 import http from 'http';
-import { IncomingMessage, SupportedMessage } from './messages';
+import { SupportedMessage as OutgoingSupportMessage } from './messages/outgoingMessages'
+import { IncomingMessage, SupportedMessage } from './messages/incomingMessages';
 import { UserManager } from './UserManager';
 import { InMemoryStore } from './store/inMemoryStore';
 
@@ -46,7 +47,7 @@ wsServer.on('request', function (request) {
         //Add rate limmting logic here
         if (message.type === 'utf8') {
             try {
-                messageHandler(connection , JSON.parse(message.utf8Data))
+                messageHandler(connection, JSON.parse(message.utf8Data))
             } catch (e) {
 
             }
@@ -61,8 +62,43 @@ wsServer.on('request', function (request) {
 });
 
 function messageHandler(ws: connection, message: IncomingMessage) {
-    if(message.type == SupportedMessage.JoinRoom){
+    if (message.type == SupportedMessage.JoinRoom) {
         const payload = message.payload
         userManager.addUser(payload.name, payload.userId, payload.roomId, ws)
+    }
+    if (message.type === SupportedMessage.SendMessage) {
+        const payload = message.payload
+        const user = userManager.getUser(payload.roomId, payload.userId)
+        if (!user) {
+            console.log('user not found in db')
+            return
+        }
+        const chat = store.addChat(payload.userId, user.name, payload.message, payload.roomId)
+        if(!chat) return
+        const outgoingPayload = {
+            type: OutgoingSupportMessage.AddChat,
+            payload: {
+                chatId: chat.id,
+                roomId: payload.roomId,
+                message: payload.message,
+                name: user.name,
+                upvotes: 0
+            }
+        }
+
+        userManager.broadcase(payload.roomId, payload.userId, outgoingPayload)
+    }
+    if (message.type === SupportedMessage.UpvoteMessage) {
+        const payload = message.payload
+        const chat = store.upvote(payload.userId, payload.roomId, payload.chatId)
+        if(!chat) return
+        const outgoingPayload = {
+            type: OutgoingSupportMessage.UpdateChat,
+            payload:{
+                roomId: payload.roomId,
+                chatId: payload.chatId,
+                upvotes: chat.upvotes.length
+            }
+        }
     }
 }
