@@ -25,7 +25,7 @@ const wsServer = new WebSocketServer({
     // facilities built into the protocol and the browser.  You should
     // *always* verify the connection's origin and decide whether or not
     // to accept it.
-    autoAcceptConnections: true
+    autoAcceptConnections: false
 });
 
 function originIsAllowed(origin: string) {
@@ -62,6 +62,7 @@ wsServer.on('request', function (request) {
 });
 
 function messageHandler(ws: connection, message: IncomingMessage) {
+    console.log('incoming message ', JSON.stringify(message))
     if (message.type == SupportedMessage.JoinRoom) {
         const payload = message.payload
         userManager.addUser(payload.name, payload.userId, payload.roomId, ws)

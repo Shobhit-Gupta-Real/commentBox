@@ -55,8 +55,12 @@ export class UserManager {
             console.log('room not found in db')
             return
         }
-
-        room.users.forEach(({conn})=>{
+        
+        room.users.forEach(({conn, id})=>{
+            // if(id === userId){
+            //     return;
+            // }
+            console.log("outgoing message ", JSON.stringify(message))
             conn.sendUTF(JSON.stringify(message))
         })
     }
