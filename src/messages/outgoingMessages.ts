@@ -1,6 +1,6 @@
 export enum SupportedMessage {
     AddChat = "ADD_CHAT",
-    UpdateChat = "UpdateChat"
+    UpdateChat = "UPDATE_CHAT"
 }
 
 export type MessagePayload = {

@@ -1,6 +1,6 @@
 import { connection, server as WebSocketServer } from 'websocket'
 import http from 'http';
-import { SupportedMessage as OutgoingSupportMessage } from './messages/outgoingMessages'
+import { OutgoingMessage, SupportedMessage as OutgoingSupportMessage } from './messages/outgoingMessages'
 import { IncomingMessage, SupportedMessage } from './messages/incomingMessages';
 import { UserManager } from './UserManager';
 import { InMemoryStore } from './store/inMemoryStore';
@@ -75,8 +75,8 @@ function messageHandler(ws: connection, message: IncomingMessage) {
             return
         }
         const chat = store.addChat(payload.userId, user.name, payload.message, payload.roomId)
-        if(!chat) return
-        const outgoingPayload = {
+        if (!chat) return
+        const outgoingPayload: OutgoingMessage = {
             type: OutgoingSupportMessage.AddChat,
             payload: {
                 chatId: chat.id,
@@ -92,14 +92,15 @@ function messageHandler(ws: connection, message: IncomingMessage) {
     if (message.type === SupportedMessage.UpvoteMessage) {
         const payload = message.payload
         const chat = store.upvote(payload.userId, payload.roomId, payload.chatId)
-        if(!chat) return
-        const outgoingPayload = {
+        if (!chat) { return; }
+        const outgoingPayload: OutgoingMessage = {
             type: OutgoingSupportMessage.UpdateChat,
-            payload:{
+            payload: {
                 roomId: payload.roomId,
                 chatId: payload.chatId,
                 upvotes: chat.upvotes.length
             }
         }
+        userManager.broadcase(payload.roomId, payload.userId, outgoingPayload)
     }
 }
